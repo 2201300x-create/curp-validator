@@ -42,7 +42,9 @@ public class CiudadanoDTO {
     public void setSegundoApellido(String segundoApellido) { this.segundoApellido = segundoApellido; }
 
     public String getCurp() { return curp; }
-    public void setCurp(String curp) { this.curp = curp; }
+    public void setCurp(String curp) {
+        this.curp = curp != null ? curp.trim().toUpperCase() : null;
+    }
 
     public Boolean getDocumentoValidado() { return documentoValidado; }
     public void setDocumentoValidado(Boolean documentoValidado) { this.documentoValidado = documentoValidado; }

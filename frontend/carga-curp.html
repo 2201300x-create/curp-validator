@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validación de Documento — CURP Validator</title>
+    <link rel="stylesheet" href="/css/estilos.css">
+</head>
+<body>
+    <main class="contenedor">
+        <header class="encabezado">
+            <h1>CURP Validator</h1>
+            <p>Validación de documento PDF</p>
+        </header>
+
+        <section class="tarjeta">
+            <h2>Subir documento CURP</h2>
+            <p class="descripcion">Selecciona el ciudadano y sube el PDF oficial de CURP para validarlo.</p>
+
+            <form id="formBusqueda" class="form-inline">
+                <div class="campo">
+                    <label for="buscarCurp">Buscar por CURP</label>
+                    <input type="text" id="buscarCurp" maxlength="18" placeholder="Ej. GOML921212HDFRRS09">
+                </div>
+                <button type="submit" class="btn secundario">Buscar</button>
+            </form>
+
+            <div id="infoCiudadano" class="info-ciudadano oculto">
+                <p><strong>ID:</strong> <span id="ciudadanoId"></span></p>
+                <p><strong>Nombre:</strong> <span id="ciudadanoNombre"></span></p>
+                <p><strong>CURP:</strong> <span id="ciudadanoCurp"></span></p>
+                <p><strong>Documento validado:</strong> <span id="ciudadanoValidado"></span></p>
+            </div>
+
+            <form id="formValidacion" class="separador-superior" enctype="multipart/form-data">
+                <div class="campo">
+                    <label for="archivo">Archivo PDF</label>
+                    <input type="file" id="archivo" name="archivo" accept="application/pdf,.pdf" required>
+                </div>
+                <button type="submit" class="btn primario" id="btnValidar" disabled>Validar documento</button>
+            </form>
+
+            <div id="mensaje" class="mensaje oculto" role="alert"></div>
+            <div id="rechazados" class="rechazados oculto">
+                <h3>Documentos rechazados</h3>
+                <ul id="listaRechazados"></ul>
+            </div>
+        </section>
+
+        <nav class="navegacion">
+            <a href="/registro.html">← Volver al registro</a>
+        </nav>
+    </main>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        let ciudadanoActual = null;
+
+        const formBusqueda = document.getElementById('formBusqueda');
+        const formValidacion = document.getElementById('formValidacion');
+        const mensaje = document.getElementById('mensaje');
+        const infoCiudadano = document.getElementById('infoCiudadano');
+        const btnValidar = document.getElementById('btnValidar');
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const id = params.get('id') || sessionStorage.getItem('ciudadanoId');
+            const curp = params.get('curp') || sessionStorage.getItem('ciudadanoCurp');
+            if (id) {
+                await cargarCiudadanoPorId(id);
+            } else if (curp) {
+                document.getElementById('buscarCurp').value = curp;
+                await cargarCiudadanoPorCurp(curp);
+            }
+        });
+
+        formBusqueda.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const curp = document.getElementById('buscarCurp').value.trim().toUpperCase();
+            if (!curp) return;
+            await cargarCiudadanoPorCurp(curp);
+        });
+
+        formValidacion.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            if (!ciudadanoActual) return;
+
+            mensaje.className = 'mensaje oculto';
+            const archivo = document.getElementById('archivo').files[0];
+            const formData = new FormData();
+            formData.append('ciudadanoId', ciudadanoActual.id);
+            formData.append('archivo', archivo);
+
+            btnValidar.disabled = true;
+            btnValidar.textContent = 'Validando...';
+
+            try {
+                const respuesta = await fetch('/api/documentos/validar', {
+                    method: 'POST',
+                    body: formData
+                });
+                const datos = await respuesta.json();
+
+                if (!respuesta.ok) {
+                    mostrarMensaje(datos.message || 'Error al validar documento', 'error');
+                    return;
+                }
+
+                if (datos.valido) {
+                    mostrarMensaje(datos.mensaje, 'exito');
+                    ciudadanoActual.documentoValidado = true;
+                    actualizarInfoCiudadano();
+                } else {
+                    mostrarMensaje(
+                        `${datos.mensaje}${datos.curpDetectada ? ' (detectada: ' + datos.curpDetectada + ')' : ''}`,
+                        'error'
+                    );
+                    await cargarRechazados(ciudadanoActual.id);
+                }
+            } catch (error) {
+                mostrarMensaje('No se pudo conectar con el servidor', 'error');
+            } finally {
+                btnValidar.disabled = false;
+                btnValidar.textContent = 'Validar documento';
+            }
+        });
+
+        async function cargarCiudadanoPorId(id) {
+            try {
+                const respuesta = await fetch(`/api/ciudadanos/${id}`);
+                const datos = await respuesta.json();
+                if (!respuesta.ok) {
+                    mostrarMensaje(datos.message || 'Ciudadano no encontrado', 'error');
+                    return;
+                }
+                establecerCiudadano(datos);
+            } catch (error) {
+                mostrarMensaje('Error al buscar ciudadano', 'error');
+            }
+        }
+
+        async function cargarCiudadanoPorCurp(curp) {
+            try {
+                const respuesta = await fetch(`/api/ciudadanos/curp/${encodeURIComponent(curp)}`);
+                const datos = await respuesta.json();
+                if (!respuesta.ok) {
+                    mostrarMensaje(datos.message || 'Ciudadano no encontrado', 'error');
+                    return;
+                }
+                establecerCiudadano(datos);
+            } catch (error) {
+                mostrarMensaje('Error al buscar ciudadano', 'error');
+            }
+        }
+
+        function establecerCiudadano(datos) {
+            ciudadanoActual = datos;
+            sessionStorage.setItem('ciudadanoId', datos.id);
+            sessionStorage.setItem('ciudadanoCurp', datos.curp);
+            actualizarInfoCiudadano();
+            btnValidar.disabled = false;
+            cargarRechazados(datos.id);
+        }
+
+        function actualizarInfoCiudadano() {
+            document.getElementById('ciudadanoId').textContent = ciudadanoActual.id;
+            document.getElementById('ciudadanoNombre').textContent =
+                `${ciudadanoActual.nombre} ${ciudadanoActual.primerApellido} ${ciudadanoActual.segundoApellido}`;
+            document.getElementById('ciudadanoCurp').textContent = ciudadanoActual.curp;
+            document.getElementById('ciudadanoValidado').textContent =
+                ciudadanoActual.documentoValidado ? 'Sí' : 'No';
+            infoCiudadano.classList.remove('oculto');
+        }
+
+        async function cargarRechazados(ciudadanoId) {
+            const contenedor = document.getElementById('rechazados');
+            const lista = document.getElementById('listaRechazados');
+            lista.innerHTML = '';
+
+            try {
+                const respuesta = await fetch(`/api/documentos/rechazados/${ciudadanoId}`);
+                const datos = await respuesta.json();
+                if (!respuesta.ok || datos.length === 0) {
+                    contenedor.classList.add('oculto');
+                    return;
+                }
+
+                datos.forEach(doc => {
+                    const item = document.createElement('li');
+                    item.textContent = `${doc.fechaRechazo} — ${doc.motivoRechazo}`;
+                    lista.appendChild(item);
+                });
+                contenedor.classList.remove('oculto');
+            } catch (error) {
+                contenedor.classList.add('oculto');
+            }
+        }
+
+        function mostrarMensaje(texto, tipo) {
+            mensaje.textContent = texto;
+            mensaje.className = `mensaje ${tipo}`;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,119 @@
+ESTRUCTURA DEL PROYECTO — curp-validator
+=========================================
+
+Objetivo: registrar ciudadanos y validar que el PDF de CURP subido
+corresponda a la persona registrada, usando PDFBox + Tesseract OCR.
+
+Raíz del repositorio: curp-validator/
+Remoto: https://github.com/2201300x-create/curp-validator.git
+
+
+ÁRBOL DE CARPETAS (objetivo vs estado actual)
+---------------------------------------------
+
+curp-validator/
+├── src/
+│   ├── main/
+│   │   ├── java/com/planpormexico/curp_validator/
+│   │   │   ├── CurpValidatorApplication.java     [OK] Punto de entrada Spring Boot
+│   │   │   │
+│   │   │   ├── controller/                       [PENDIENTE] Carpeta creada, sin archivos
+│   │   │   │   ├── CiudadanoController.java      [PENDIENTE] CRUD / registro de ciudadanos
+│   │   │   │   └── DocumentoController.java      [PENDIENTE] Subida y validación de PDF
+│   │   │   │
+│   │   │   ├── service/                          [PENDIENTE] Carpeta creada, sin archivos
+│   │   │   │   ├── CiudadanoService.java         [PENDIENTE] Lógica de registro y consulta
+│   │   │   │   ├── DocumentoService.java         [PENDIENTE] Orquestación de validación
+│   │   │   │   ├── OcrService.java               [PENDIENTE] Tesseract — extraer texto de imagen
+│   │   │   │   └── PdfService.java               [PENDIENTE] PDFBox — leer / rasterizar PDF
+│   │   │   │
+│   │   │   ├── repository/                       [OK]
+│   │   │   │   ├── CiudadanoRepository.java      [OK] findByCurp, existsByCurp
+│   │   │   │   └── DocumentoRechazadoRepository.java [OK] findByCiudadanoId
+│   │   │   │
+│   │   │   ├── model/                            [OK]
+│   │   │   │   ├── Ciudadano.java                [OK] Entidad con validación regex CURP
+│   │   │   │   └── DocumentoRechazado.java       [OK] Evidencias de rechazo
+│   │   │   │
+│   │   │   ├── dto/                              [OK]
+│   │   │   │   ├── CiudadanoDTO.java             [OK]
+│   │   │   │   └── ValidacionResultDTO.java      [OK]
+│   │   │   │
+│   │   │   └── util/                             [PENDIENTE] Carpeta creada, sin archivos
+│   │   │       └── CurpValidator.java            [PENDIENTE] Utilidad regex / dígito verificador
+│   │   │
+│   │   └── resources/
+│   │       ├── application.properties            [OK] PostgreSQL, JPA, multipart, evidencias
+│   │       ├── evidencias/                       [OK] Carpeta vacía — PDFs rechazados
+│   │       ├── static/                           [PENDIENTE] Carpeta creada, sin archivos
+│   │       └── templates/                        [PENDIENTE] Carpeta creada, sin archivos
+│   │
+│   └── test/
+│       └── java/.../CurpValidatorApplicationTests.java [OK] Solo contextLoads()
+│
+├── frontend/                                     [PENDIENTE] Carpeta creada, sin archivos
+│   ├── registro.html                             [PENDIENTE]
+│   └── carga-curp.html                           [PENDIENTE]
+│
+├── pom.xml                                       [OK] Spring Boot, JPA, Web, PDFBox, Tess4j
+├── mvnw / mvnw.cmd                               [OK] Maven Wrapper
+├── INSTRU.md                                     [OK] Instrucciones de configuración y ejecución
+├── estructura.txt                                [OK] Este archivo
+└── README.md                                     [PENDIENTE] Solo título por ahora
+
+
+MODELO DE DATOS
+---------------
+
+Tabla: ciudadanos
+  - id (PK)
+  - nombre, primer_apellido, segundo_apellido
+  - curp (única, 18 caracteres, regex validada)
+  - documento_validado (boolean, default false)
+  - fecha_registro (auto al crear)
+
+Tabla: documentos_rechazados
+  - id (PK)
+  - ciudadano_id (FK → ciudadanos)
+  - ruta_documento
+  - motivo_rechazo
+  - curp_detectada (opcional)
+  - fecha_rechazo (auto al crear)
+
+
+FLUJO DE VALIDACIÓN
+-------------------
+
+1. Usuario registra ciudadano (nombre, apellidos, CURP). Máximo 10 en fase de prueba.
+2. Usuario sube PDF del documento oficial de CURP.
+3. PdfService extrae texto embebido; si no hay CURP, OcrService aplica Tesseract.
+4. DocumentoCurpAnalyzer verifica que sea constancia oficial (RENAPO, CONSTANCIA, etc.).
+5. Se extrae la CURP y se compara con la registrada.
+6. Se verifica que nombre y apellidos coincidan con el documento.
+7. Si coincide todo → documento_validado = true.
+8. Si no → PDF en evidencias/ + registro en documentos_rechazados.
+
+
+DIVISIÓN SUGERIDA DEL TRABAJO
+-----------------------------
+
+  Persona   Área                    Responsabilidades
+  -----------------------------------------------------------------------
+  Dev 1     Backend - Datos         Modelos [OK], repositorios [OK], registro de ciudadanos
+  -----------------------------------------------------------------------
+  Dev 2     Backend - Validación    OcrService, PdfService, comparación CURP, evidencias
+  -----------------------------------------------------------------------
+  Dev 3     Frontend + Controller   Vistas HTML, endpoints REST, integración general
+  -----------------------------------------------------------------------
+
+
+DEPENDENCIAS CLAVE (pom.xml)
+----------------------------
+
+  - spring-boot-starter-web
+  - spring-boot-starter-data-jpa
+  - spring-boot-starter-validation
+  - postgresql (runtime)
+  - pdfbox 3.0.1
+  - tess4j 5.10.0
+  - lombok (declarado, aún no usado en entidades)

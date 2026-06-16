@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Registro Ciudadano</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" rel="stylesheet">
+
+    <style>
+      *{box-sizing:border-box;margin:0;padding:0;}
+      body{font-family:'Inter',sans-serif;}
+      .page{background:#F7F8FA;min-height:100vh;}
+
+      .topbar{background:#fff;padding:14px 32px;display:flex;align-items:center;gap:14px;border-bottom:1px solid #EAEAEA;position:sticky;top:0;z-index:10;}
+      .brand{font-size:15px;font-weight:700;color:#111;letter-spacing:-.3px;}
+      .brand span{color:#4F46E5;}
+
+      .split{display:flex;min-height:calc(100vh - 66px);}
+      .split-left{width:45%;position:sticky;top:66px;height:calc(100vh - 66px);flex-shrink:0;overflow:hidden;}
+      .split-left img{width:100%;height:100%;object-fit:cover;display:block;}
+      .split-left-overlay{position:absolute;inset:0;background:linear-gradient(160deg,rgba(22,163,74,.55) 0%,rgba(15,118,110,.5) 100%);}
+      .split-left::after{content:'';position:absolute;top:0;right:0;width:80px;height:100%;background:linear-gradient(to right,transparent,#F7F8FA);z-index:2;}
+      .split-left-text{position:absolute;bottom:40px;left:32px;right:32px;color:#fff;}
+      .split-left-text h2{font-size:26px;font-weight:800;letter-spacing:-.5px;margin-bottom:8px;line-height:1.2;}
+      .split-left-text p{font-size:13px;opacity:.85;line-height:1.6;}
+      .split-right{flex:1;overflow-y:auto;display:flex;flex-direction:column;align-items:center;padding:40px 32px 60px;}
+
+      .stepper{display:flex;align-items:center;justify-content:center;padding:0 0 32px;}
+      .step-col{display:flex;flex-direction:column;align-items:center;}
+      .step-circle{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;transition:all 0.3s;}
+      .step-circle.done{background:#22C55E;color:#fff;box-shadow:0 0 0 4px #DCFCE7;}
+      .step-circle.active{background:#4F46E5;color:#fff;box-shadow:0 0 0 4px #EEF2FF;}
+      .step-label{font-size:11px;font-weight:600;margin-top:6px;color:#6B7280;transition:all 0.3s;}
+      .step-label.done{color:#22C55E;}
+      .step-label.active{color:#4F46E5;}
+      .step-line{width:80px;height:2px;margin-bottom:18px;transition:all 0.3s;}
+      .step-line.done{background:#22C55E;}
+      .step-line.pending{background:#E5E7EB;}
+
+      .main{width:100%;max-width:480px;}
+      .citizen-pill{background:#fff;border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:14px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+      .avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#4F46E5,#7C3AED);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0;}
+      .c-name{font-size:14px;font-weight:700;color:#111;}
+      .c-curp{font-family:'Courier New',monospace;font-size:11px;color:#6B7280;letter-spacing:.06em;margin-top:2px;}
+      .chip-ok{margin-left:auto;display:flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:#166534;background:#DCFCE7;padding:4px 10px;border-radius:20px;}
+
+      .card{background:#fff;border-radius:20px;padding:32px;box-shadow:0 1px 3px rgba(0,0,0,.06),0 8px 24px rgba(0,0,0,.04);}
+      .card-tag{display:inline-flex;align-items:center;gap:6px;background:#F0FDF4;color:#166534;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;margin-bottom:14px;text-transform:uppercase;letter-spacing:.05em;}
+      .card-title{font-size:22px;font-weight:800;color:#111;letter-spacing:-.4px;margin-bottom:6px;}
+      .card-sub{font-size:13px;color:#6B7280;margin-bottom:24px;line-height:1.6;}
+
+      .drop-zone{border:2px dashed #E5E7EB;border-radius:14px;padding:36px 20px;text-align:center;cursor:pointer;transition:all .2s;background:#FAFAFA;}
+      .drop-zone:hover,.drop-zone.over{border-color:#4F46E5;background:#EEF2FF;}
+      .drop-zone .icon-wrap{width:52px;height:52px;border-radius:14px;background:#EEF2FF;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:24px;color:#4F46E5;}
+      .drop-title{font-size:14px;font-weight:700;color:#111;margin-bottom:4px;}
+      .drop-sub{font-size:12px;color:#6B7280;}
+      .drop-limit{font-size:11px;color:#9CA3AF;margin-top:6px;}
+      input[type=file]{display:none;}
+
+      .file-preview{display:none;align-items:center;gap:12px;background:#F9FAFB;border:1.5px solid #E5E7EB;border-radius:12px;padding:12px 16px;margin-top:12px;}
+      .file-preview.show{display:flex;}
+      .pdf-icon{width:36px;height:36px;background:#FEE2E2;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#DC2626;font-size:20px;}
+      .f-name{font-size:13px;font-weight:600;color:#111;}
+      .f-size{font-size:11px;color:#6B7280;margin-top:2px;}
+      .rm-btn{margin-left:auto;background:none;border:none;cursor:pointer;color:#9CA3AF;font-size:18px;line-height:1;}
+      .rm-btn:hover{color:#EF4444;}
+
+      .divider{height:1px;background:#F3F4F6;margin:22px 0;}
+
+      .check-list{list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:24px;}
+      .check-list li{display:flex;align-items:center;gap:10px;font-size:13px;color:#374151;}
+      .check-list li .ci{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;transition:all 0.3s;}
+      .ci.pending{background:#F3F4F6;color:#9CA3AF;}
+      .ci.ok{background:#DCFCE7;color:#16A34A;}
+
+      .btn{width:100%;padding:14px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;border:none;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .15s;}
+      .btn-main{background:linear-gradient(135deg,#16A34A,#22C55E);color:#fff;box-shadow:0 4px 14px rgba(22,163,74,.3);}
+      .btn-main:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 20px rgba(22,163,74,.4);}
+      .btn-main:disabled{background:#E5E7EB;color:#9CA3AF;box-shadow:none;cursor:not-allowed;}
+      
+      .btn-outline {background: transparent; color: #4F46E5; border: 1.5px solid #4F46E5;}
+      .btn-outline:hover {background: #EEF2FF;}
+
+      .warn{background:#FFFBEB;border-radius:10px;padding:12px 14px;display:flex;gap:10px;margin-top:14px;}
+      .warn i{color:#D97706;font-size:16px;flex-shrink:0;}
+      .warn p{font-size:12px;color:#92400E;line-height:1.5;}
+
+      @media(max-width:720px){
+        .split-left{display:none;}
+        .split-right{padding:24px 16px 60px;}
+      }
+
+      /* === ESTILOS NUEVOS PARA MODAL Y PANTALLA FINAL === */
+      .modal-overlay {position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 50;}
+      .modal-overlay.show {display: flex;}
+      .modal-content {background: #fff; border-radius: 20px; padding: 32px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);}
+      
+      /* Animación de escaneo */
+      .scan-icon {font-size: 48px; color: #4F46E5; margin-bottom: 16px; display: inline-block; animation: pulse 1.5s infinite;}
+      @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
+      .modal-title {font-size: 18px; font-weight: 700; color: #111; margin-bottom: 8px;}
+      .modal-sub {font-size: 13px; color: #6B7280;}
+
+      /* Pantalla final (Oculta por defecto) */
+      #pantalla-final {display: none; text-align: center; padding: 20px 0;}
+      .success-icon {width: 80px; height: 80px; background: #DCFCE7; color: #16A34A; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; box-shadow: 0 0 0 10px rgba(34, 197, 94, 0.1);}
+
+      /* Modales de error y advertencia */
+      .modal-icon-wrap {width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 18px;}
+      .modal-icon-wrap.error {background: #FEE2E2; color: #DC2626;}
+      .modal-icon-wrap.warn  {background: #FEF3C7; color: #D97706;}
+      .modal-icon-wrap svg {width: 32px; height: 32px;}
+      .modal-msg {font-size: 13px; color: #6B7280; line-height: 1.6; margin-bottom: 24px; word-break: break-word;}
+      .modal-btn {width: 100%; padding: 13px; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; border: none; transition: all .15s;}
+      .modal-btn.error {background: #DC2626; color: #fff;}
+      .modal-btn.error:hover {background: #B91C1C;}
+      .modal-btn.warn  {background: #D97706; color: #fff;}
+      .modal-btn.warn:hover  {background: #B45309;}
+
+      /* Pantalla de verificación (paso 3) */
+      #pantalla-verificacion {display: none;}
+      .verif-header {text-align: center; margin-bottom: 28px;}
+      .verif-spinner {width: 64px; height: 64px; border-radius: 50%; background: #EEF2FF; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; position: relative;}
+      .verif-spinner svg {width: 32px; height: 32px; color: #4F46E5; animation: spin 1.2s linear infinite;}
+      @keyframes spin { from {transform: rotate(0deg);} to {transform: rotate(360deg);} }
+      .verif-title {font-size: 20px; font-weight: 800; color: #111; margin-bottom: 6px;}
+      .verif-sub {font-size: 13px; color: #6B7280;}
+      .verif-steps {display: flex; flex-direction: column; gap: 12px; margin-top: 8px;}
+      .verif-step {display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 12px; background: #F9FAFB; border: 1.5px solid #F3F4F6; transition: all 0.4s;}
+      .verif-step.active {background: #EEF2FF; border-color: #C7D2FE;}
+      .verif-step.done   {background: #F0FDF4; border-color: #BBF7D0;}
+      .verif-step.error  {background: #FEF2F2; border-color: #FECACA;}
+      .vs-icon {width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.4s;}
+      .vs-icon.pending {background: #F3F4F6; color: #9CA3AF;}
+      .vs-icon.active  {background: #4F46E5; color: #fff;}
+      .vs-icon.done    {background: #22C55E; color: #fff;}
+      .vs-icon.error   {background: #EF4444; color: #fff;}
+      .vs-icon svg {width: 18px; height: 18px;}
+      .vs-text {flex: 1;}
+      .vs-label {font-size: 13px; font-weight: 700; color: #374151;}
+      .vs-label.active {color: #4F46E5;}
+      .vs-label.done   {color: #166534;}
+      .vs-label.error  {color: #991B1B;}
+      .vs-status {font-size: 11px; color: #9CA3AF; margin-top: 2px;}
+      .vs-status.active {color: #6366F1;}
+      .vs-status.done   {color: #22C55E;}
+      .vs-status.error  {color: #EF4444;}
+  </style>
+</head>
+<body>
+
+  <div class="page">
+    <div class="topbar">
+      <div style="width:38px;height:38px;background:#2E7D52;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3L4 7v5c0 4.4 3.4 8.5 8 9.5 4.6-1 8-5.1 8-9.5V7L12 3z"/>
+          <path d="M9 12l2 2 4-4"/>
+        </svg>
+      </div>
+      <div>
+        <div class="brand">Plan por <span>México</span> S.A. de C.V.</div>
+        <div style="font-size:12px;color:#6B7280;margin-top:2px;">Sistema de Registro Ciudadano</div>
+      </div>
+    </div>
+
+    <div class="split">
+      <div class="split-left">
+        <img src="./angel.jpg" alt="Ciudad de México">
+        <div class="split-left-overlay"></div>
+        <div class="split-left-text">
+          <h2>Verificación de documento</h2>
+          <p>Sube tu CURP en PDF para completar el proceso de registro de forma segura.</p>
+        </div>
+      </div>
+
+      <div class="split-right">
+        <div class="stepper" id="stepper-nav">
+          <div class="step-col">
+            <div class="step-circle done"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+            <div class="step-label done">Registro</div>
+          </div>
+          <div class="step-line done"></div>
+          <div class="step-col">
+            <div class="step-circle active" id="step2-circle">2</div>
+            <div class="step-label active" id="step2-label">Documento</div>
+          </div>
+          <div class="step-line pending" id="line2"></div>
+          <div class="step-col">
+            <div class="step-circle pending" id="step3-circle">3</div>
+            <div class="step-label pending" id="step3-label">Verificación</div>
+          </div>
+          <div class="step-line pending" id="line3"></div>
+          <div class="step-col">
+            <div class="step-circle pending" id="step4-circle">4</div>
+            <div class="step-label pending" id="step4-label">Listo</div>
+          </div>
+        </div>
+
+        <div class="main">
+          <div class="citizen-pill">
+            <div class="avatar">--</div>
+            <div>
+              <div class="c-name">Cargando...</div>
+              <div class="c-curp">---</div>
+            </div>
+            <div class="chip-ok">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Registrado
+            </div>
+          </div>
+
+          <div class="card" id="pantalla-documento">
+            <div class="card-tag">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="9 15 12 18 15 15"/></svg>
+              Verificación de documento
+            </div>
+            <div class="card-title">Sube tu CURP en PDF</div>
+            <div class="card-sub">El sistema leerá el archivo y verificará que la información coincida con tus datos registrados.</div>
+
+            <div class="drop-zone" id="dz" onclick="document.getElementById('fi').click()" ondragover="ev(event,true)" ondragleave="ev(event,false)" ondrop="drop(event)">
+              <div class="icon-wrap">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+              </div>
+              <div class="drop-title">Arrastra tu PDF aquí o haz clic</div>
+              <div class="drop-sub">Solo archivos PDF</div>
+              <div class="drop-limit">Máx. 5 MB</div>
+            </div>
+            <input type="file" id="fi" accept=".pdf" onchange="load(this.files[0])">
+
+            <div class="file-preview" id="fp">
+              <div class="pdf-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              </div>
+              <div>
+                <div class="f-name" id="fn">—</div>
+                <div class="f-size" id="fs">—</div>
+              </div>
+              <button class="rm-btn" onclick="clear_()" aria-label="Quitar">✕</button>
+            </div>
+
+            <div class="divider"></div>
+
+            <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#9CA3AF;margin-bottom:12px;">Lo que el sistema revisará:</p>
+            <ul class="check-list">
+              <li><span class="ci pending" id="c1"><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>Que sea un archivo PDF válido</li>
+              <li><span class="ci pending" id="c2"><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>Que el documento contenga una CURP</li>
+              <li><span class="ci pending" id="c3"><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>Que la CURP corresponda a este ciudadano</li>
+            </ul>
+
+            <button class="btn btn-main" id="sb" disabled>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+              Validar documento
+            </button>
+
+            <div class="warn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              <p>Los documentos inválidos quedarán guardados como evidencia para aclaraciones futuras.</p>
+            </div>
+          </div>
+
+          <div class="card" id="pantalla-verificacion">
+            <div class="verif-header">
+              <div class="verif-spinner">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+              </div>
+              <div class="verif-title">Analizando documento</div>
+              <div class="verif-sub">Por favor espera, esto puede tardar unos segundos</div>
+            </div>
+            <div class="verif-steps">
+              <div class="verif-step" id="vs1">
+                <div class="vs-icon pending" id="vs1-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                </div>
+                <div class="vs-text">
+                  <div class="vs-label" id="vs1-label">Leyendo archivo PDF</div>
+                  <div class="vs-status" id="vs1-status">En espera...</div>
+                </div>
+              </div>
+              <div class="verif-step" id="vs2">
+                <div class="vs-icon pending" id="vs2-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </div>
+                <div class="vs-text">
+                  <div class="vs-label" id="vs2-label">Extrayendo texto y CURP</div>
+                  <div class="vs-status" id="vs2-status">En espera...</div>
+                </div>
+              </div>
+              <div class="verif-step" id="vs3">
+                <div class="vs-icon pending" id="vs3-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3L4 7v5c0 4.4 3.4 8.5 8 9.5 4.6-1 8-5.1 8-9.5V7L12 3z"/></svg>
+                </div>
+                <div class="vs-text">
+                  <div class="vs-label" id="vs3-label">Verificando constancia oficial</div>
+                  <div class="vs-status" id="vs3-status">En espera...</div>
+                </div>
+              </div>
+              <div class="verif-step" id="vs4">
+                <div class="vs-icon pending" id="vs4-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </div>
+                <div class="vs-text">
+                  <div class="vs-label" id="vs4-label">Comparando datos del ciudadano</div>
+                  <div class="vs-status" id="vs4-status">En espera...</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" id="pantalla-final">
+            <div class="success-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <h2 class="card-title" style="margin-bottom: 12px;">¡Registro completado!</h2>
+            <p class="card-sub" style="font-size: 14px;">El documento ha sido verificado por el sistema y coincide perfectamente con los datos del ciudadano.</p>
+            
+            <button class="btn btn-main" onclick="window.location.href='registro.html'">
+                Realizar otro registro
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal error rechazo -->
+  <div class="modal-overlay" id="modal-error">
+    <div class="modal-content">
+      <div class="modal-icon-wrap error">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+      </div>
+      <h3 class="modal-title">Documento rechazado</h3>
+      <p class="modal-msg" id="modal-error-msg"></p>
+      <button class="modal-btn error" onclick="cerrarModalError()">Entendido, intentar de nuevo</button>
+    </div>
+  </div>
+
+  <!-- Modal advertencia PDF inválido -->
+  <div class="modal-overlay" id="modal-warn">
+    <div class="modal-content">
+      <div class="modal-icon-wrap warn">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+      <h3 class="modal-title" id="modal-warn-title">Archivo inválido</h3>
+      <p class="modal-msg" id="modal-warn-msg"></p>
+      <button class="modal-btn warn" onclick="document.getElementById('modal-warn').classList.remove('show')">Aceptar</button>
+    </div>
+  </div>
+
+  <script>
+  let ciudadanoActual = null;
+  let archivoSeleccionado = null;
+
+  function mostrarError(msg) {
+      document.getElementById('modal-error-msg').textContent = msg || 'Error desconocido.';
+      document.getElementById('modal-error').classList.add('show');
+  }
+  function cerrarModalError() {
+      document.getElementById('modal-error').classList.remove('show');
+      clear_();
+      resetStepperToStep2();
+  }
+  function mostrarWarn(titulo, msg) {
+      document.getElementById('modal-warn-title').textContent = titulo;
+      document.getElementById('modal-warn-msg').textContent = msg;
+      document.getElementById('modal-warn').classList.add('show');
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      const curp = params.get('curp');
+
+      if (!curp) {
+          mostrarWarn("Sin ciudadano detectado", "No se detectó un ciudadano activo. Serás redirigido al registro.");
+          setTimeout(() => { window.location.href = 'registro.html'; }, 2500);
+          return;
+      }
+
+      fetch(`http://localhost:8080/api/ciudadanos/curp/${curp}`)
+          .then(response => {
+              if (!response.ok) throw new Error("Ciudadano no encontrado");
+              return response.json();
+          })
+          .then(data => {
+              ciudadanoActual = data;
+              const nombreCompleto = `${data.nombre} ${data.primerApellido} ${data.segundoApellido}`;
+              document.querySelector('.c-name').textContent = nombreCompleto;
+              document.querySelector('.c-curp').textContent = data.curp;
+              const iniciales = data.nombre.charAt(0) + data.primerApellido.charAt(0);
+              document.querySelector('.avatar').textContent = iniciales.toUpperCase();
+          })
+          .catch(error => {
+              mostrarWarn("Ciudadano no encontrado", error.message + "\nSerás redirigido al registro.");
+              setTimeout(() => { window.location.href = 'registro.html'; }, 2500);
+          });
+  });
+
+  function load(f){
+    if(!f || f.type !== "application/pdf") {
+        mostrarWarn("Archivo no válido", "Por favor, selecciona únicamente un archivo PDF.");
+        return;
+    }
+    archivoSeleccionado = f;
+    document.getElementById('fp').classList.add('show');
+    document.getElementById('fn').textContent=f.name;
+    document.getElementById('fs').textContent=(f.size/1024).toFixed(1)+' KB';
+    ['c1','c2','c3'].forEach(id=>{
+      let el=document.getElementById(id);
+      el.classList.remove('pending');el.classList.add('ok');
+    });
+    document.getElementById('sb').disabled=false;
+  }
+
+  function clear_(){
+    archivoSeleccionado = null;
+    document.getElementById('fp').classList.remove('show');
+    document.getElementById('fi').value='';
+    ['c1','c2','c3'].forEach(id=>{
+      let el=document.getElementById(id);
+      el.classList.remove('ok');el.classList.add('pending');
+    });
+    document.getElementById('sb').disabled=true;
+  }
+
+  function ev(e,on){
+      e.preventDefault();
+      document.getElementById('dz').classList[on?'add':'remove']('over');
+  }
+
+  function drop(e){
+      e.preventDefault();
+      document.getElementById('dz').classList.remove('over');
+      if(e.dataTransfer.files[0]) load(e.dataTransfer.files[0]);
+  }
+
+  function updateStepper(step) {
+      if(step >= 3) {
+          // Marcar paso 2 como completado
+          document.getElementById('step2-circle').innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+          document.getElementById('step2-circle').className = 'step-circle done';
+          document.getElementById('step2-label').className = 'step-label done';
+          document.getElementById('line2').className = 'step-line done';
+          
+          // Activar paso 3 (Modal visible)
+          document.getElementById('step3-circle').className = 'step-circle active';
+          document.getElementById('step3-label').className = 'step-label active';
+      }
+      
+      if(step === 4) {
+          // Marcar paso 3 como completado
+          document.getElementById('step3-circle').innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+          document.getElementById('step3-circle').className = 'step-circle done';
+          document.getElementById('step3-label').className = 'step-label done';
+          document.getElementById('line3').className = 'step-line done';
+          
+          // Activar paso 4 (Pantalla final)
+          document.getElementById('step4-circle').className = 'step-circle active';
+          document.getElementById('step4-label').className = 'step-label active';
+      }
+  }
+
+  function resetStepperToStep2() {
+      // Regresar al estado inicial del paso 2 si hay error
+      document.getElementById('step2-circle').innerHTML = '2';
+      document.getElementById('step2-circle').className = 'step-circle active';
+      document.getElementById('step2-label').className = 'step-label active';
+      document.getElementById('line2').className = 'step-line pending';
+      
+      document.getElementById('step3-circle').innerHTML = '3';
+      document.getElementById('step3-circle').className = 'step-circle pending';
+      document.getElementById('step3-label').className = 'step-label pending';
+  }
+
+  // Animar un paso de verificación
+  function activarPasoVerif(num, labelText, statusText) {
+      const step = document.getElementById('vs' + num);
+      const icon = document.getElementById('vs' + num + '-icon');
+      const label = document.getElementById('vs' + num + '-label');
+      const status = document.getElementById('vs' + num + '-status');
+      step.className = 'verif-step active';
+      icon.className = 'vs-icon active';
+      label.className = 'vs-label active';
+      label.textContent = labelText;
+      status.className = 'vs-status active';
+      status.textContent = statusText;
+  }
+
+  function completarPasoVerif(num, labelText) {
+      const step = document.getElementById('vs' + num);
+      const icon = document.getElementById('vs' + num + '-icon');
+      const label = document.getElementById('vs' + num + '-label');
+      const status = document.getElementById('vs' + num + '-status');
+      step.className = 'verif-step done';
+      icon.className = 'vs-icon done';
+      icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+      label.className = 'vs-label done';
+      label.textContent = labelText;
+      status.className = 'vs-status done';
+      status.textContent = 'Completado ✓';
+  }
+
+  function errorPasoVerif(num, labelText, motivo) {
+      const step = document.getElementById('vs' + num);
+      const icon = document.getElementById('vs' + num + '-icon');
+      const label = document.getElementById('vs' + num + '-label');
+      const status = document.getElementById('vs' + num + '-status');
+      step.className = 'verif-step error';
+      icon.className = 'vs-icon error';
+      icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+      label.className = 'vs-label error';
+      label.textContent = labelText;
+      status.className = 'vs-status error';
+      status.textContent = motivo;
+  }
+
+  function resetPasosVerif() {
+      const iconsSVG = [
+          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
+          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3L4 7v5c0 4.4 3.4 8.5 8 9.5 4.6-1 8-5.1 8-9.5V7L12 3z"/></svg>',
+          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'
+      ];
+      const labels = ['Leyendo archivo PDF','Extrayendo texto y CURP','Verificando constancia oficial','Comparando datos del ciudadano'];
+      for(let i = 1; i <= 4; i++) {
+          document.getElementById('vs'+i).className = 'verif-step';
+          document.getElementById('vs'+i+'-icon').className = 'vs-icon pending';
+          document.getElementById('vs'+i+'-icon').innerHTML = iconsSVG[i-1];
+          document.getElementById('vs'+i+'-label').className = 'vs-label';
+          document.getElementById('vs'+i+'-label').textContent = labels[i-1];
+          document.getElementById('vs'+i+'-status').className = 'vs-status';
+          document.getElementById('vs'+i+'-status').textContent = 'En espera...';
+      }
+  }
+
+  document.getElementById('sb').addEventListener('click', function() {
+      if (!ciudadanoActual || !archivoSeleccionado) return;
+
+      // Ocultar formulario, mostrar pantalla verificación y activar paso 3 del stepper
+      document.getElementById('pantalla-documento').style.display = 'none';
+      document.getElementById('pantalla-verificacion').style.display = 'block';
+      resetPasosVerif();
+      updateStepper(3);
+
+      // Animar pasos con delays simulados mientras se hace el fetch
+      const delay = ms => new Promise(r => setTimeout(r, ms));
+
+      const formData = new FormData();
+      formData.append('ciudadanoId', ciudadanoActual.id);
+      formData.append('archivo', archivoSeleccionado);
+
+      // Paso 1 y 2 animados antes de recibir respuesta
+      activarPasoVerif(1, 'Leyendo archivo PDF', 'Procesando...');
+      delay(800).then(() => {
+          completarPasoVerif(1, 'Leyendo archivo PDF');
+          activarPasoVerif(2, 'Extrayendo texto y CURP', 'Analizando contenido...');
+      });
+      delay(1600).then(() => {
+          completarPasoVerif(2, 'Extrayendo texto y CURP');
+          activarPasoVerif(3, 'Verificando constancia oficial', 'Comprobando con RENAPO...');
+      });
+
+      // Fetch real al backend
+      fetch('http://localhost:8080/api/documentos/validar', {
+          method: 'POST',
+          body: formData
+      })
+      .then(async response => {
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.message || "Error al procesar el documento");
+          return data;
+      })
+      .then(async data => {
+          // Asegurar que el paso 3 se complete visualmente antes de continuar
+          await delay(1800);
+          completarPasoVerif(3, 'Verificando constancia oficial');
+          activarPasoVerif(4, 'Comparando datos del ciudadano', 'Verificando identidad...');
+          await delay(900);
+
+          if(data.valido) {
+              completarPasoVerif(4, 'Comparando datos del ciudadano');
+              await delay(600);
+              // ÉXITO
+              document.getElementById('pantalla-verificacion').style.display = 'none';
+              document.getElementById('pantalla-final').style.display = 'block';
+              updateStepper(4);
+          } else {
+              // RECHAZADO: marcar el paso 4 en error, luego mostrar modal
+              errorPasoVerif(4, 'Comparando datos del ciudadano', data.mensaje);
+              await delay(1200);
+              document.getElementById('pantalla-verificacion').style.display = 'none';
+              document.getElementById('pantalla-documento').style.display = 'block';
+              mostrarError(data.mensaje);
+              clear_();
+              resetStepperToStep2();
+          }
+      })
+      .catch(async error => {
+          await delay(1800);
+          errorPasoVerif(3, 'Verificando constancia oficial', error.message);
+          await delay(1200);
+          document.getElementById('pantalla-verificacion').style.display = 'none';
+          document.getElementById('pantalla-documento').style.display = 'block';
+          mostrarError(error.message);
+          clear_();
+          resetStepperToStep2();
+      });
+  });
+  </script>
+
+</body>
+</html>

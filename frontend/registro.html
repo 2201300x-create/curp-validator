@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Registro Ciudadano</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" rel="stylesheet">
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0;}
+        body{font-family:'Inter',sans-serif;}
+        .page{background:#F7F8FA;min-height:100vh;}
+
+        .topbar{background:#fff;padding:14px 32px;display:flex;align-items:center;gap:14px;border-bottom:1px solid #EAEAEA;position:sticky;top:0;z-index:10;}
+        .brand{font-size:15px;font-weight:700;color:#111;letter-spacing:-.3px;}
+        .brand span{color:#4F46E5;}
+
+        .split{display:flex;min-height:calc(100vh - 66px);}
+        .split-left{width:45%;position:sticky;top:66px;height:calc(100vh - 66px);flex-shrink:0;overflow:hidden; z-index:1;}
+        .split-left img{width:100%;height:100%;object-fit:cover;display:block;}
+        .split-left-overlay{position:absolute;inset:0;background:linear-gradient(160deg,rgba(79,70,229,.6) 0%,rgba(109,40,217,.5) 100%);border-right:none;}
+        .split-left::after{content:'';position:absolute;top:0;right:0;width:80px;height:100%;background:linear-gradient(to right,transparent,#F7F8FA);z-index:2;}
+        .split-left-text{position:absolute;bottom:40px;left:32px;right:32px;color:#fff;}
+        .split-left-text h2{font-size:26px;font-weight:800;letter-spacing:-.5px;margin-bottom:8px;line-height:1.2;}
+        .split-left-text p{font-size:13px;opacity:.85;line-height:1.6;}
+        .split-right{flex:1;overflow-y:auto;display:flex;flex-direction:column;align-items:center;padding:40px 32px 60px;}
+
+        .stepper{display:flex;align-items:center;justify-content:center;gap:0;padding:0 0 32px;}
+        .step-circle{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;transition:all .3s;}
+        .step-circle.done{background:#22C55E;color:#fff;box-shadow:0 0 0 4px #DCFCE7;}
+        .step-circle.active{background:#4F46E5;color:#fff;box-shadow:0 0 0 4px #EEF2FF;}
+        .step-circle.pending{background:#fff;color:#9CA3AF;border:2px solid #E5E7EB;}
+        .step-label{font-size:11px;font-weight:600;margin-top:6px;text-align:center;color:#6B7280;}
+        .step-label.active{color:#4F46E5;}
+        .step-label.done{color:#22C55E;}
+        .step-col{display:flex;flex-direction:column;align-items:center;}
+        .step-line{width:80px;height:2px;background:#E5E7EB;margin-bottom:18px;}
+        .step-line.done{background:#22C55E;}
+
+        .main{width:100%;max-width:480px;}
+        .card{background:#fff;border-radius:20px;padding:32px;box-shadow:0 1px 3px rgba(0,0,0,.06),0 8px 24px rgba(0,0,0,.04);overflow:hidden;}
+        .card-tag{display:inline-flex;align-items:center;gap:6px;background:#EEF2FF;color:#4F46E5;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;margin-bottom:14px;text-transform:uppercase;letter-spacing:.05em;}
+        .card-title{font-size:22px;font-weight:800;color:#111;letter-spacing:-.4px;margin-bottom:6px;}
+        .card-sub{font-size:13px;color:#6B7280;margin-bottom:28px;line-height:1.6;}
+
+        .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;min-width:0;}
+        .form-group{display:flex;flex-direction:column;gap:6px;min-width:0;}
+        label{font-size:12px;font-weight:600;color:#374151;letter-spacing:.02em;}
+        input[type=text]{width:100%;min-width:0;padding:11px 14px;border:1.5px solid #E5E7EB;border-radius:10px;font-size:14px;color:#111;outline:none;transition:border-color .2s,box-shadow .2s;background:#FAFAFA;}
+        input[type=text]:focus{border-color:#4F46E5;box-shadow:0 0 0 4px rgba(79,70,229,.1);background:#fff;}
+        .curp-field{font-family:'Courier New',monospace;letter-spacing:.1em;text-transform:uppercase;font-size:15px;}
+        .field-hint{font-size:11px;color:#9CA3AF;display:flex;justify-content:space-between;}
+
+        .divider{height:1px;background:#F3F4F6;margin:22px 0;}
+
+        .btn{width:100%;padding:14px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;border:none;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:8px;}
+        .btn-main{background:linear-gradient(135deg,#4F46E5,#7C3AED);color:#fff;box-shadow:0 4px 14px rgba(79,70,229,.35);}
+        .btn-main:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(79,70,229,.4);}
+        .btn-ghost{background:transparent;color:#6B7280;font-size:13px;font-weight:500;margin-top:6px;}
+        .btn-ghost:hover{color:#4F46E5;}
+
+        .tip{background:#F0FDF4;border-radius:10px;padding:12px 14px;display:flex;gap:10px;margin-bottom:22px;}
+        .tip i{color:#22C55E;font-size:16px;flex-shrink:0;margin-top:1px;}
+        .tip p{font-size:12px;color:#166534;line-height:1.5;}
+
+        @media(max-width:720px){
+        .split-left{display:none;}
+        .split-right{padding:24px 16px 60px;}
+        }
+    </style>
+
+</head>
+<body>
+    <div class="page">
+    <div class="topbar">
+        <div style="width:38px;height:38px;background:#2E7D52;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3L4 7v5c0 4.4 3.4 8.5 8 9.5 4.6-1 8-5.1 8-9.5V7L12 3z"/>
+            <path d="M9 12l2 2 4-4"/>
+        </svg>
+        </div>
+        <div>
+        <div class="brand">Plan por <span>México</span> S.A. de C.V.</div>
+        <div style="font-size:12px;color:#6B7280;margin-top:2px;">Sistema de Registro Ciudadano</div>
+        </div>
+    </div>
+
+    <div class="split">
+        <div class="split-left">
+        <img src="./angel.jpg" alt="Ciudad de México">
+        <div class="split-left-overlay"></div>
+        <div class="split-left-text">
+            <h2>Registro ciudadano digital</h2>
+            <p>Centraliza tu información de forma segura. Solo toma unos minutos completar el proceso.</p>
+        </div>
+        </div>
+
+        <div class="split-right">
+        <div class="stepper">
+            <div class="step-col">
+            <div class="step-circle active">1</div>
+            <div class="step-label active">Registro</div>
+            </div>
+            <div class="step-line"></div>
+            <div class="step-col">
+            <div class="step-circle pending">2</div>
+            <div class="step-label pending">Documento</div>
+            </div>
+            <div class="step-line pending"></div>
+            <div class="step-col">
+            <div class="step-circle pending">3</div>
+            <div class="step-label pending">Verificación</div>
+            </div>
+            <div class="step-line pending"></div>
+            <div class="step-col">
+            <div class="step-circle pending">4</div>
+            <div class="step-label pending">Listo</div>
+            </div>
+        </div>
+
+        <div class="main">
+            <div class="card">
+            <div class="card-tag"><i class="ti ti-user-plus" aria-hidden="true"></i> Nuevo registro</div>
+            <div class="card-title">Datos del ciudadano</div>
+            <div class="card-sub">Ingresa la información tal como aparece en tu identificación oficial.</div>
+
+            <div class="tip">
+                <i class="ti ti-info-circle" aria-hidden="true"></i>
+                <p>Al finalizar este paso podrás cargar tu documento CURP en PDF para completar el proceso.</p>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                <label for="nombre">Nombre(s)</label>
+                <input type="text" id="nombre" placeholder="Juan Carlos">
+                </div>
+                <div class="form-group">
+                <label for="ap1">Primer apellido</label>
+                <input type="text" id="ap1" placeholder="García">
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom:16px;">
+                <label for="ap2">Segundo apellido</label>
+                <input type="text" id="ap2" placeholder="López">
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="form-group" style="margin-bottom:8px;">
+                <label for="curp">CURP</label>
+                <input type="text" id="curp" class="curp-field" placeholder="XXXX000000XXXXXXXX" maxlength="18" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'');document.getElementById('cnt').textContent=this.value.length+'/18'">
+                <div class="field-hint">
+                <span>18 caracteres · solo letras y números</span>
+                <span id="cnt">0/18</span>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+                <button id="btnRegistrar" class="btn btn-main">
+                    Continuar al paso 2 <i class="ti ti-arrow-right" aria-hidden="true"></i>
+                </button>
+            <button class="btn btn-ghost">Ya estoy registrado — ir a cargar documento</button>
+            </div>
+        </div>
+        </div>
+    </div>
+    </div>
+
+    <script>
+    document.getElementById('btnRegistrar').addEventListener('click', function(e) {
+        e.preventDefault();
+
+        const data = {
+            nombre: document.getElementById('nombre').value.trim(),
+            primerApellido: document.getElementById('ap1').value.trim(),
+            segundoApellido: document.getElementById('ap2').value.trim(),
+            curp: document.getElementById('curp').value.trim()
+        };
+
+        if(!data.nombre || !data.primerApellido || !data.segundoApellido || data.curp.length !== 18) {
+            alert("Por favor completa todos los campos. La CURP debe tener 18 caracteres.");
+            return;
+        }
+
+        const btn = document.getElementById('btnRegistrar');
+        const textoOriginal = btn.innerHTML;
+        btn.innerHTML = '<i class="ti ti-loader"></i> Guardando...';
+        btn.disabled = true;
+
+        fetch('http://localhost:8080/api/ciudadanos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+        .then(async response => {
+            const contentType = response.headers.get("content-type");
+            if (!response.ok) {
+                // Extraer el mensaje de error del ErrorResponseDTO de tu compañero
+                if (contentType && contentType.indexOf("application/json") !== -1) {
+                    const errData = await response.json();
+                    // Si hay detalles de validación (como la Regex del DTO), mostrarlos
+                    const errorMsg = errData.details ? errData.details.join("\n") : errData.message;
+                    throw new Error(errorMsg || "Error al registrar ciudadano");
+                } else {
+                    throw new Error("Error del servidor: " + response.status);
+                }
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Redirigir mandando la CURP en la URL para saber a quién le vamos a cargar el PDF en el siguiente paso
+            window.location.href = `carga-curp.html?curp=${data.curp}`; 
+        })
+        .catch(error => {
+            alert("Problema con el registro:\n" + error.message);
+            btn.innerHTML = textoOriginal;
+            btn.disabled = false;
+        });
+    });
+    </script>
+</body>
+</html>
